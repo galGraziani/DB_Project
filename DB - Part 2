@@ -1,0 +1,43 @@
+------------------------ Simple Stored Procedure ---------------------
+CREATE PROCEDURE Delete_Expired_Cards @Date datetime
+AS 
+	Delete from PaymentMethods
+	where dateadd(m,1,cast(STUFF(ExperationDate,3,0,'/01') as datetime))-1 < @Date
+
+
+
+alter table products add [Average Rating] real
+select P.ProductID, COUNT(O.OrderID), avg_rating= SUM(R.Rating)/CAST(COUNT(O.OrderID) as real)
+from Reviews as R join Orders as O on r.orderID=o.OrderID
+JOIN Products AS P on P.ProductID=o.ProductID
+GROUP BY P.ProductID
+
+------------------------ Simple Trigger ---------------------
+alter table products add [average rating] real
+CREATE TRIGGER Update_Rating
+		ON Reviews
+		FOR INSERT 
+AS
+UPDATE Products
+Set [Average Rating]=(
+						select SUM(R.Rating)/CAST(COUNT(O.OrderID) as real)
+						from Reviews as R join Orders as O on r.orderID=o.OrderID
+						JOIN Products AS P on P.ProductID=o.ProductID
+						WHERE Products.ProductID = O.ProductID
+						GROUP BY P.ProductID
+					)
+WHERE ProductID in (select distinct ProductID from inserted)
+
+------------------------ Scalar Function ---------------------
+create function Best_Property_In_City(@city varchar(20))
+Returns int
+AS BEGIN
+	DECLARE @Best_Product int
+	select top 1 @Best_Product= p.ProductID
+	from Products as p join Properties AS Prop on p.ProductID=prop.PropertyID
+	join Locations as L on L.LocationID=Prop.Location 
+	where L.City=@city
+	group by P.ProductID, p.[Average Rating]
+	order by p.[Average Rating] desc
+	RETURN @Best_PRODUCT
+	END
