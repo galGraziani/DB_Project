@@ -41,3 +41,50 @@ AS BEGIN
 	order by p.[Average Rating] desc
 	RETURN @Best_PRODUCT
 	END
+
+
+
+----------------------------------------- SP Using CURSOR ------------------------------------
+DECLARE
+
+@out_desc VARCHAR(1000),
+@out_mesg VARCHAR(10)
+
+DECLARE @name VARCHAR(20),
+		@birthdate datetime,
+		@email NVARCHAR(50),
+		@body NVARCHAR(1000)
+
+
+DECLARE Birthday_Cursor CURSOR READ_ONLY
+FOR
+SELECT [name]=[Name-first]+ ' ' + [Name-last], [birthdate], [email]
+FROM Customers
+
+OPEN Birthday_Cursor
+
+FETCH NEXT FROM Birthday_Cursor INTO @name, @birthdate, @email
+
+WHILE @@FETCH_STATUS = 0
+
+BEGIN
+
+      IF DAY(@birthdate) = DAY(GETDATE())
+	 AND MONTH(@birthdate) = MONTH(GETDATE())
+
+      BEGIN
+
+            SET @body = 'Happy Birthday ' + @name +
+
+            ', Enjoy your special day! '
+
+            + 'Sincerely, AirBNB Customer Relationship Department'
+
+            PRINT @body
+      END
+
+      FETCH NEXT FROM Birthday_Cursor INTO @name, @birthdate, @email
+END
+
+CLOSE Birthday_Cursor
+DEALLOCATE Birthday_Cursor
